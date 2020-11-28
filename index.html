@@ -1,0 +1,142 @@
+<html>
+<head>
+<script src="Chart.min.js"></script>
+
+</head>
+<body>
+	Frequency : <input type="text" id="inputFreq" value="400" />Hz<br>
+	Tone duration : <input type="text" id="inputToneDur" value="0.5" />seconds<br>
+	Ramp duration : <input type="text" id="inputRampDur" value="0.005" />seconds<br>
+	Silent Period : <input type="text" id="inputSilentPeriod" value="0.5" />seconds<br>
+	<button onclick="playButton(wavArray);">Create And Play</button>
+	<button onclick="plotButton(wavArray);">Plot</button><br>
+	<canvas id="myChart" width="400" height="400"></canvas><br>
+</body>
+
+<script>
+var ctx = document.getElementById('myChart');
+
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function covertDurationToLength(duration, rate = 44100) {
+	return Math.round(duration * rate);
+}
+
+function createWav(frequency, amplitude, duration, rate = 44100) {
+	console.log("createWav");
+	// y(t) = A sin (2*pi*f*t + offset )
+	var A = amplitude;
+	var pi = Math.PI;
+	var f = frequency;
+	// var offset = something
+	var length = covertDurationToLength(duration);
+	var y = new Float32Array(length);
+	var t;
+	for(t=0; t<length; t++) {
+		y[t] = A * Math.sin(2*pi*f/rate*t);
+	}
+	return y;
+}
+
+function playWavArray(wavArray, rate = 44100) {
+	console.log("playWavArray");
+	var buffer = audioCtx.createBuffer(1, wavArray.length, rate);
+	var bufferData = buffer.getChannelData(0);
+	var i;
+	for(i=0; i<wavArray.length; i++) {
+		bufferData[i] = wavArray[i];
+	}
+	var source = audioCtx.createBufferSource();
+	source.buffer = buffer;
+	source.connect(audioCtx.destination);
+	source.start(0);
+	console.log("playWavArray Started");
+}
+
+function hanning(length) {
+	// w(n) = 0.5 - 0.5 * cos( (2*pi*n) / (M-1) ) )
+	var M = length;
+	var n;
+	var pi = Math.PI;
+	var w = new Float32Array(length);
+	for(n=0; n<M; n++) {
+		w[n] = 0.5 - 0.5 * Math.cos((2*pi*n)/(M-1));
+	}
+	return w;
+}
+
+function silence(duration) {
+	var length = covertDurationToLength(duration);
+	var silence = new Float32Array(length);
+	silence.fill(0);
+	return silence;
+}
+
+function applyWindow(wavArray, win) {
+	var i,j;
+	for(i=0; i<win.length/2; i++) {
+		wavArray[i] = wavArray[i] * win[i];
+	}
+	for(i=win.length-1,j = wavArray.length-1; i>=win.length/2; i--,j--) {
+		wavArray[j] = wavArray[j] * win[i];
+	}
+	return wavArray
+}
+
+function concatFloat32Array(first, second) {
+	var result = new Float32Array(first.length + second.length);
+	result.set(first);
+	result.set(second, first.length);
+	return result;
+}
+
+function plot(array) {
+	var x = [];
+	var i;
+	for(i=0;i<array.length;i++) {
+		x.push(i);
+	}
+	var myLineChart = new Chart(ctx, {
+    	type: 'line',
+    	data: {
+    		labels: x,
+    		datasets: [
+    			{
+    				label : 'amplitude',
+    				data : array
+    			}
+    		]
+
+    	}
+	});
+}
+
+var wavArray;
+var rampSamples;
+var win;
+var finalArray = [];
+function playButton() {
+	var frequency = parseInt(document.getElementById('inputFreq').value);
+	var dur = parseFloat(document.getElementById('inputToneDur').value);
+	var ramp_dur = parseFloat(document.getElementById('inputRampDur').value);
+	var silent_period = parseFloat(document.getElementById('inputSilentPeriod').value);
+	console.log(frequency);
+	console.log(dur);
+	console.log(ramp_dur);
+	wavArray = createWav(frequency, 1.0, dur);
+	rampSamples = covertDurationToLength(ramp_dur);
+	win = hanning(2*rampSamples);
+	wavArray = applyWindow(wavArray, win);
+	finalArray = wavArray;
+	finalArray = concatFloat32Array(finalArray, silence(silent_period));
+	finalArray = concatFloat32Array(finalArray, wavArray);
+	playWavArray(finalArray);
+
+}
+
+function plotButton() {
+	plot(finalArray);
+}
+//playWavArray(wavArray);
+</script>
+</html>
