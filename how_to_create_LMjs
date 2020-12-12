@@ -1,0 +1,1 @@
+browserify pre-lm.js --standalone LM > LM.js

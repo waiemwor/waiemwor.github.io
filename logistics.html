@@ -1,0 +1,103 @@
+<html>
+<head>
+<script src="Chart.min.js"></script>
+<script src="LM.js"></script>
+</head>
+
+<body>
+	<label>x_data</label><textarea id="x_data" cols=100></textarea><br>
+	<label>y_data</label><textarea id="y_data" cols=100></textarea><br>
+	<label>guess k</label><input type="text" id="guess_k" value="10" /><br>
+	<label>guess x0</label><input type="text" id="guess_x0" value="500" />      <button onclick="btn_click();">Calculate</button><br>
+	<div style="height: 300px;width: 500px">
+	<canvas id="myChart" width="200" height="200"></canvas><br>
+	</div>
+	<label>k : </label><input type="text" id="k" /><br>
+	<label>x0 : </label><input type="text" id="x0" /><br>
+	<label>Threshold : </label><input type="text" id="threshold" /><br>
+	<br><br><br>
+</body>
+<script type="text/javascript">
+
+var ctx = document.getElementById('myChart');
+
+var x_data = [399.2784993,409.6681097,419.4805195,430.4473304,439.1053391,449.4949495,459.8845599,469.6969697,480.0865801,489.3217893,500.2886003,509.5238095,519.3362193,530.3030303,540.1154401,549.3506494,560.3174603,569.5526696,579.9422799,589.7546898,599.5670996,609.95671];
+
+var y_data = [0,0,0,0,0,0,0,0,0.20141736,0.000995644,0.144611112,0.284454046,0.125617504,0.375093086,0.501700778,0.724719515,0.726558046,0.998726122,0.875803675,0.998630649,0.998584276,0.998535176];
+
+var x_dataBox = document.getElementById('x_data');
+x_dataBox.value = JSON.stringify(x_data);
+
+var y_dataBox = document.getElementById('y_data');
+y_dataBox.value = JSON.stringify(y_data);
+
+var guess_kBox = document.getElementById('guess_k');
+var guess_x0Box = document.getElementById('guess_x0');
+
+function logistic([k, x0]) {
+	return (x) => (1 / (1 + Math.exp(-(x-x0)/k)));
+}
+
+function btn_click() {
+	x_data = JSON.parse(x_dataBox.value);
+	y_data = JSON.parse(y_dataBox.value);
+	var guess_k = parseFloat(guess_kBox.value);
+	var guess_x0 = parseFloat(guess_x0Box.value);
+
+	var combinded = [];
+	var i;
+	for(i=0; i<x_data.length; i++) {
+		combinded.push({x : x_data[i], y : y_data[i]});
+	}
+
+	var test = LM.fitLogistic(x_data, y_data, [guess_k, guess_x0]);
+	var k = test.parameterValues[0];
+	var x0 = test.parameterValues[1];
+	var d25 = x0-k*Math.log((1/0.25)-1);
+	var d75 = x0-k*Math.log((1/0.75)-1);
+	var threshold = (d75-d25)/2;
+
+	var thresholdBox = document.getElementById('threshold');
+	thresholdBox.value = threshold.toString();
+
+	var kBox = document.getElementById('k');
+	kBox.value = k.toString();
+
+	var x0Box = document.getElementById('x0');
+	x0Box.value = x0.toString();
+
+	real_logistic = logistic([k, x0]);
+
+	var final_curve = [];
+	for(i=0; i<x_data.length; i++) {
+		final_curve.push({x : x_data[i], y : real_logistic(x_data[i])});
+	}
+
+	var myLineChart = new Chart(ctx, {
+    		type: 'scatter',
+    		data: {
+    			datasets: [
+    				{
+    					label : 'data',
+    					data : combinded,
+    					pointBackgroundColor : 'red'
+    				},
+    				{
+    					label : 'curve',
+    					data : final_curve,
+    					type : 'line',
+    					fill : false,
+    					borderColor : 'blue'
+    				}
+    			]
+    		},
+    		options : {
+    			responsive: true,
+    			maintainAspectRatio: false
+    		}
+		});
+}
+</script>
+
+</html>
+
