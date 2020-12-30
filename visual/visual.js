@@ -62,6 +62,9 @@ dialogCancelScheduler.add(quitPsychoJS, '', false);
 psychoJS.start({
   expName: expName,
   expInfo: expInfo,
+  resources: [
+    { name: 'white_blob.png', path: 'resources/white_blob.png' }
+  ]
   });
 
 psychoJS.experimentLogger.setLevel(core.Logger.ServerLevel.EXP);
