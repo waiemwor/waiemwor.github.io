@@ -192,7 +192,7 @@ function experimentInit() {
   t_standard = 100;
   f_standard = 1000;
   comparison_list = [979, 985, 991, 997, 1003, 1009, 1015, 1021];
-  interval_list = [0, 0, 0, 0, 0, 0, 0, 0];
+  interval_list = [100, 100, 100, 100, 100, 100, 100, 100];
   max_appearance = 20;
   trials_per_block = (comparison_list.length * max_appearance);
   interval_dict = {};
