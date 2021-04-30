@@ -1,0 +1,67 @@
+<html>
+<head>
+	<script src="chart.min.js"></script>
+</head>
+<body>
+	<div style="height: 200px">
+		<canvas id="myChart"></canvas>
+	</div>
+</body>
+<script>
+
+const data = {
+  labels: [],
+  datasets: [
+    {
+      label: 'Connectivity Status',
+      data: [],
+      borderColor: "rgb(102, 153, 255)",
+      backgroundColor: "rgb(102, 153, 255)"
+    }
+  ]
+};
+
+
+const config = {
+  type: 'line',
+  data: data,
+  options: {
+  	maintainAspectRatio: false,
+    responsive: true,
+    stepped: true,
+    fill: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Connectivity Status'
+      }
+    }
+  },
+};
+var ctx = document.getElementById('myChart');
+var myChart = new Chart(ctx, config);
+
+const checkOnlineStatus = async () => {
+  try {
+    const online = await fetch("/1x1.png");
+    return online.status >= 200 && online.status < 300; // either true or false
+  } catch (err) {
+    return false; // definitely offline
+  }
+};
+
+setInterval(async () => {
+  if(await checkOnlineStatus()) {
+		data.datasets[0].data.push(1);
+	}
+	else {
+		data.datasets[0].data.push(0);
+	}
+	var d = new Date();
+	var textd = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+	data.labels.push(textd);
+	myChart.update();
+}, 1000); // probably too often, try 30000 for every 30 seconds
+
+</script>
+</html>
